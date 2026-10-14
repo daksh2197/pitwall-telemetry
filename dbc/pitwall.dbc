@@ -1,0 +1,30 @@
+VERSION "1"
+
+NS_ :
+
+BS_:
+
+BU_: CAR PITWALL
+
+BO_ 256 ENGINE: 8 CAR
+ SG_ EngineRPM : 0|16@1+ (0.25,0) [0|16383.75] "rpm" PITWALL
+ SG_ Throttle : 16|8@1+ (0.4,0) [0|100] "%" PITWALL
+
+BO_ 257 CHASSIS: 8 CAR
+ SG_ Speed : 7|16@0+ (0.01,0) [0|655.35] "km/h" PITWALL
+ SG_ BrakePressure : 16|10@1+ (0.1,0) [0|102.3] "%" PITWALL
+ SG_ SteeringAngle : 32|16@1- (0.1,0) [-3276.8|3276.7] "deg" PITWALL
+
+BO_ 258 DRIVETRAIN: 8 CAR
+ SG_ Gear : 0|4@1+ (1,0) [0|15] "" PITWALL
+ SG_ BrakeOn : 4|1@1+ (1,0) [0|1] "" PITWALL
+ SG_ ShiftLight : 5|1@1+ (1,0) [0|1] "" PITWALL
+ SG_ CoolantTemp : 8|8@1+ (1,-40) [-40|215] "degC" PITWALL
+
+CM_ "Written for this project. Invented layout, not taken from any car, team or vendor.";
+CM_ BO_ 256 "Sent at 100 Hz. Intel (little-endian) signals.";
+CM_ BO_ 257 "Sent at 100 Hz. Speed is Motorola (big-endian); brake is 10 bits; steering is signed.";
+CM_ BO_ 258 "Sent at 20 Hz. Bit-packed flags, a 4-bit gear and a temperature with an offset.";
+CM_ SG_ 258 Gear "0 is neutral.";
+CM_ SG_ 258 BrakeOn "1 while the brake pressure is above 2 percent.";
+CM_ SG_ 258 ShiftLight "1 when the engine is within 4 percent of its rev limit.";

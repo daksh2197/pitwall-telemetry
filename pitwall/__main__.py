@@ -1,0 +1,137 @@
+"""Command line: `uv run python -m pitwall <run|bench|record|serve>`."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import contextlib
+import sys
+from pathlib import Path
+
+from pitwall import bench
+from pitwall.pipeline import Pipeline, RunConfig
+from pitwall.record import REPLAY_CONFIG, REPLAY_PATH, write_replay
+from pitwall.server import DEFAULT_PORT, serve
+
+
+def parse_outage(text: str) -> tuple[float, float]:
+    try:
+        start, end = (float(part) for part in text.split(":"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"outage must look like 12:17, got {text!r}") from exc
+    if not 0 <= start < end:
+        raise argparse.ArgumentTypeError("outage needs 0 <= start < end")
+    return (start, end)
+
+
+def add_run_options(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--seed", type=int, default=bench.SEED, help="lap seed (default %(default)s)")
+    p.add_argument("--duration", type=float, default=bench.DURATION_S, help="seconds of driving")
+    p.add_argument("--loss", type=float, default=0.0, help="percent of packets lost, 0 to 100")
+    p.add_argument("--delay", type=int, default=40, help="one-way delay in ms")
+    p.add_argument("--jitter", type=int, default=8, help="extra random delay, up to this many ms")
+    p.add_argument(
+        "--outage",
+        type=parse_outage,
+        action="append",
+        default=[],
+        help="start:end in seconds, e.g. 12:17. Repeat for more than one",
+    )
+    p.add_argument("--buffer", type=int, default=2048, help="car ring buffer size in frames")
+
+
+def config_from(args: argparse.Namespace) -> RunConfig:
+    if not 0 <= args.loss <= 100:
+        raise SystemExit("--loss is a percent between 0 and 100")
+    return RunConfig(
+        seed=args.seed,
+        duration_s=args.duration,
+        loss=args.loss / 100,
+        delay_ms=args.delay,
+        jitter_ms=args.jitter,
+        outages_s=tuple(args.outage),
+        buffer=args.buffer,
+    )
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    pipeline = Pipeline(config_from(args))
+    m = pipeline.run_to_end()
+    s = pipeline.session
+    assert s is not None
+    print(f"frames made      {s.generated}")
+    print(f"delivered        {s.receiver.stats.delivered}")
+    print(f"lost             {s.receiver.stats.lost}")
+    print(f"resends          {s.sender.stats.resends}")
+    print(f"latency p50      {m.p50_ms:.0f} ms")
+    print(f"latency p95      {m.p95_ms:.0f} ms")
+    print(f"latency max      {m.max_ms:.0f} ms")
+    print(f"longest silence  {m.longest_gap_ms / 1000:.2f} s")
+    if m.back_to_live_ms is not None:
+        print(f"backfill done    {m.backfill_done_ms or 0:.0f} ms after the link came back")
+        print(f"back to live     {m.back_to_live_ms:.0f} ms after the link came back")
+    return 0
+
+
+def cmd_bench(args: argparse.Namespace) -> int:
+    results = [bench.run_row(row) for row in bench.ROWS]
+    print(bench.table(results))
+    if args.write:
+        Path(args.write).write_text(bench.markdown(results), encoding="utf-8")
+        print(f"\nwrote {args.write}", file=sys.stderr)
+    if args.json:
+        Path(args.json).write_text(bench.json_dump(results) + "\n", encoding="utf-8")
+        print(f"wrote {args.json}", file=sys.stderr)
+    return 0
+
+
+def cmd_record(args: argparse.Namespace) -> int:
+    count = write_replay(Path(args.out))
+    print(f"wrote {count} messages to {args.out}")
+    return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    config = REPLAY_CONFIG if args.replay_run else config_from(args)
+    with contextlib.suppress(KeyboardInterrupt):
+        asyncio.run(serve(config, host=args.host, port=args.port, speed=args.speed))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="pitwall", description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    run = sub.add_parser("run", help="run the pipeline once and print the numbers")
+    add_run_options(run)
+    run.set_defaults(func=cmd_run)
+
+    b = sub.add_parser("bench", help="run every row of the results table")
+    b.add_argument("--write", metavar="FILE", help="also write the table as Markdown")
+    b.add_argument("--json", metavar="FILE", help="also write every number as JSON")
+    b.set_defaults(func=cmd_bench)
+
+    rec = sub.add_parser("record", help="record the dashboard's replay file")
+    rec.add_argument("--out", default=str(REPLAY_PATH))
+    rec.set_defaults(func=cmd_record)
+
+    srv = sub.add_parser("serve", help="serve a live run to dashboards over a WebSocket")
+    add_run_options(srv)
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=DEFAULT_PORT)
+    srv.add_argument(
+        "--speed", type=float, default=1.0, help="1 is real time, 0 is as fast as possible"
+    )
+    srv.add_argument(
+        "--replay-run",
+        action="store_true",
+        help="use the recorded replay's settings (2%% loss, outage 12:17)",
+    )
+    srv.set_defaults(func=cmd_serve)
+
+    args = parser.parse_args(argv)
+    return int(args.func(args))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

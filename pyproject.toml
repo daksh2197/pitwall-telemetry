@@ -1,0 +1,44 @@
+[project]
+name = "pitwall-telemetry"
+version = "1.0.0"
+description = "A race telemetry pipeline in miniature: CAN frames over a bad link to a live pit-wall dashboard."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Daksh Dua", email = "daksh21dua@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+  "cantools>=45.0,<46",
+  "websockets>=17.2,<18",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1,<10",
+  "pytest-asyncio>=1.4,<2",
+  "hypothesis>=6.169,<7",
+  "ruff>=0.17,<0.18",
+  "mypy>=2.4,<3",
+]
+
+[tool.uv]
+# This is an application, not a library: run it from the repo root, nothing gets installed.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["car", "link", "pitwall", "tests"]
+ignore_missing_imports = true
