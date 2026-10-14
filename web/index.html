@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pitwall Telemetry</title>
+    <meta
+      name="description"
+      content="A race telemetry pipeline in miniature: CAN frames over a bad link to a pit-wall dashboard. This page replays a recorded run, outage and backfill included."
+    />
+    <meta name="theme-color" content="#111214" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pitwall Telemetry" />
+    <meta
+      property="og:description"
+      content="CAN frames from a fake car, over a bad radio link, onto a pit-wall screen. Watch the link drop and the data come back."
+    />
+    <meta property="og:image" content="%SITE_URL%/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip" href="#trace">Skip to the trace</a>
+
+    <header class="site-head" data-chrome>
+      <a class="brand" href="https://dakshdua.ca" aria-label="Daksh Dua, dakshdua.ca">
+        <span class="brand-tile" aria-hidden="true">DD</span>
+        <span>Daksh Dua</span>
+      </a>
+      <nav class="head-links" aria-label="About this project">
+        <a href="%REPO_URL%/blob/main/docs/THE-LINK.md">How the link works</a>
+        <a href="%REPO_URL%">Source</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="intro" data-chrome>
+        <h1>Pitwall Telemetry</h1>
+        <p class="lede">
+          Numbers from a fake car, over a bad radio, onto a pit-wall screen. Watch what happens when the link drops.
+        </p>
+        <p class="source" id="source-note">Loading the recorded run.</p>
+      </div>
+
+      <p class="banner" id="banner" role="alert" hidden></p>
+
+      <section class="bar" aria-label="Playback" id="bar">
+        <button type="button" id="play" class="btn" disabled>Play</button>
+        <button type="button" id="restart" class="btn" disabled>Restart</button>
+        <label class="field" for="speed">
+          <span>Speed</span>
+          <select id="speed" disabled>
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+            <option value="8">8×</option>
+          </select>
+        </label>
+        <button type="button" id="jump" class="btn" disabled>Jump to the outage</button>
+        <label class="field scrub" for="scrub">
+          <span>Position</span>
+          <input id="scrub" type="range" min="0" max="1000" step="50" value="0" disabled />
+        </label>
+        <output class="clock" id="clock" for="scrub">0:00 / 0:00</output>
+      </section>
+
+      <section class="card trace-card" aria-labelledby="trace-h">
+        <div class="card-head">
+          <h2 id="trace-h">Traces</h2>
+          <div class="chip" id="chip" data-state="waiting">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="chip-label" id="chip-label">Waiting</span>
+            <span class="chip-detail" id="chip-detail">Waiting for the first frame.</span>
+          </div>
+        </div>
+        <canvas
+          id="trace"
+          role="img"
+          aria-label="Live traces of speed, throttle and brake against time. A gap on the right is data that has not arrived. Purple sections arrived more than 250 milliseconds late and were backfilled."
+        ></canvas>
+        <ul class="legend" aria-label="Legend">
+          <li><span class="swatch speed"></span>Speed</li>
+          <li><span class="swatch throttle"></span>Throttle</li>
+          <li><span class="swatch brake"></span>Brake</li>
+          <li><span class="swatch late"></span>Backfilled: arrived over 250 ms late</li>
+        </ul>
+      </section>
+
+      <div class="grid">
+        <section class="card now" id="now" aria-labelledby="now-h" data-stale="false">
+          <h2 id="now-h">Latest frame</h2>
+          <dl class="readouts">
+            <div class="ro ro-speed">
+              <dt>Speed</dt>
+              <dd><span id="r-speed">–</span> <small>km/h</small></dd>
+            </div>
+            <div class="ro">
+              <dt>Gear</dt>
+              <dd id="r-gear">–</dd>
+            </div>
+            <div class="ro ro-rpm">
+              <dt>Revs</dt>
+              <dd><span id="r-rpm">–</span> <small>rpm</small></dd>
+              <div class="rpm-bar" aria-hidden="true"><span id="r-rpm-bar"></span></div>
+            </div>
+            <div class="ro">
+              <dt>Coolant</dt>
+              <dd><span id="r-coolant">–</span> <small>°C</small></dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="link-h">
+          <h2 id="link-h">Link</h2>
+          <dl class="counts">
+            <div><dt>Delivered</dt><dd id="c-delivered">0</dd></div>
+            <div><dt>Backfilled</dt><dd id="c-late">0</dd></div>
+            <div><dt>Lost</dt><dd id="c-lost">0</dd></div>
+            <div><dt>Duplicates dropped</dt><dd id="c-dups">0</dd></div>
+            <div><dt>In flight or buffered</dt><dd id="c-behind">0</dd></div>
+            <div><dt>Ignored by this page</dt><dd id="c-ignored">0</dd></div>
+          </dl>
+        </section>
+
+        <section class="card" aria-labelledby="lat-h">
+          <h2 id="lat-h">Latency</h2>
+          <p class="lat-sum" id="lat-sum">No frames yet.</p>
+          <ul class="hist" id="hist" aria-label="Frames by latency. Bar length uses a log scale."></ul>
+          <p class="note">Car to pit wall, measured per frame. Bars use a log scale.</p>
+        </section>
+      </div>
+
+      <p class="end-note" id="end-note" hidden></p>
+    </main>
+
+    <footer class="site-foot" data-chrome>
+      <p>
+        Not affiliated with F1, any series, any team or any vendor. Not ATLAS, MoTeC i2 or WinDarab, and not trying
+        to be. Every number here is synthetic.
+      </p>
+      <p>Built in Calgary by <a href="https://dakshdua.ca">Daksh Dua</a>. MIT licence.</p>
+    </footer>
+
+    <div class="vh" id="announce" role="status" aria-live="polite"></div>
+  </body>
+</html>

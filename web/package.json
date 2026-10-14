@@ -1,0 +1,36 @@
+{
+  "name": "pitwall-telemetry-dashboard",
+  "version": "1.0.0",
+  "description": "The pit-wall dashboard for Pitwall Telemetry: replays a recorded run, or connects to a live one.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Daksh Dua (https://dakshdua.ca)",
+  "homepage": "https://daksh2197.github.io/pitwall-telemetry",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daksh2197/pitwall-telemetry"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  }
+}
