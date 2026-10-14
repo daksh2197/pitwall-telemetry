@@ -19,5 +19,13 @@ quant = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
 durations = [110] * len(quant)
 durations[0] = 900
 durations[-1] = 1400
-quant[0].save(out, save_all=True, append_images=quant[1:], duration=durations, loop=0, optimize=True, disposal=1)
+quant[0].save(
+    out,
+    save_all=True,
+    append_images=quant[1:],
+    duration=durations,
+    loop=0,
+    optimize=True,
+    disposal=1,
+)
 print(f"{len(quant)} frames -> {out}")
