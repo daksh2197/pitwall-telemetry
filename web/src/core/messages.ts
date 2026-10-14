@@ -82,11 +82,20 @@ function nonNeg(x: unknown): number | null {
   return n !== null && n >= 0 ? n : null;
 }
 
+// Times are milliseconds since the run began. 1e9 ms is 11 days, far past any run, and keeps
+// every later sum and loop on numbers that still count in whole steps.
+export const MAX_TIME_MS = 1e9;
+
+function time(x: unknown): number | null {
+  const n = nonNeg(x);
+  return n !== null && n <= MAX_TIME_MS ? n : null;
+}
+
 function parseSample(x: unknown): Sample | null {
   if (!isObj(x)) return null;
   const seq = nonNeg(x.seq);
-  const ts = nonNeg(x.ts);
-  const rx = nonNeg(x.rx);
+  const ts = time(x.ts);
+  const rx = time(x.rx);
   const id = nonNeg(x.id);
   const tx = nonNeg(x.tx);
   if (seq === null || ts === null || rx === null || id === null || tx === null) return null;
@@ -173,7 +182,7 @@ export function parseMessage(x: unknown): Parsed {
     return meta ? { message: { type: 'hello', meta }, dropped: 0 } : { message: null, dropped: 1 };
   }
   if (x.type === 'batch') {
-    const rx = nonNeg(x.rx_ms);
+    const rx = time(x.rx_ms);
     const link = parseLink(x.link);
     if (rx === null || link === null || !Array.isArray(x.samples)) return { message: null, dropped: 1 };
     const samples: Sample[] = [];
@@ -186,7 +195,7 @@ export function parseMessage(x: unknown): Parsed {
     return { message: { type: 'batch', rx_ms: rx, samples, link }, dropped };
   }
   if (x.type === 'end') {
-    const rx = nonNeg(x.rx_ms);
+    const rx = time(x.rx_ms);
     const summary = parseSummary(x.summary);
     if (rx === null || summary === null) return { message: null, dropped: 1 };
     return { message: { type: 'end', rx_ms: rx, summary }, dropped: 0 };

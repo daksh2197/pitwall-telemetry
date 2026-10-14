@@ -55,8 +55,12 @@ def config_from(args: argparse.Namespace) -> RunConfig:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    pipeline = Pipeline(config_from(args))
-    m = pipeline.run_to_end()
+    try:
+        pipeline = Pipeline(config_from(args))
+        m = pipeline.run_to_end()
+    except ValueError as err:
+        print(f"pitwall: {err}", file=sys.stderr)
+        return 2
     s = pipeline.session
     assert s is not None
     print(f"frames made      {s.generated}")

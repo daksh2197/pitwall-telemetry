@@ -98,6 +98,6 @@ export function niceMax(value: number, step: number, floor: number): number {
 export function ticks(view: View, everyMs: number): number[] {
   const out: number[] = [];
   const first = Math.ceil(Math.max(view.t0, 0) / everyMs) * everyMs;
-  for (let t = first; t <= view.t1; t += everyMs) out.push(t);
+  for (let t = first; t <= view.t1 && out.length < 1000; t += everyMs) out.push(t);
   return out;
 }

@@ -79,6 +79,7 @@ jobs:
         id: pages
         if: github.ref == 'refs/heads/main' && !github.event.repository.private
         uses: actions/configure-pages@v6
+        continue-on-error: true  # fails until Pages is switched to GitHub Actions; the build then uses package.json URLs
 
       - name: Build
         run: npm run build

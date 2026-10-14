@@ -152,6 +152,7 @@ h2 {
 }
 
 .source {
+  overflow-wrap: anywhere;
   margin: 10px 0 0;
   max-width: 62ch;
   color: var(--muted);
@@ -159,6 +160,7 @@ h2 {
 }
 
 .banner {
+  overflow-wrap: anywhere;
   margin: 0 0 16px;
   padding: 12px 14px;
   border: 1px solid var(--signal);

@@ -13,7 +13,7 @@ Most telemetry demos show a clean stream. This one starts from the radio that fa
 | `link/` | Packets, lossy channel, sender, receiver, session loop |
 | `pitwall/` | Decoder, metrics, pipeline, WebSocket server, replay recorder, bench, CLI |
 | `web/` | The dashboard: TypeScript, Vite, no framework. `src/core` is pure logic with tests |
-| `tests/` | 95 Python tests. The web tests are 83 Vitest tests in `web/src` |
+| `tests/` | 96 Python tests. The web tests are 84 Vitest tests in `web/src` |
 | `scripts/` | Browser walkthrough (57 checks), subpath server, media generation |
 
 The replay the site plays (`web/public/replay.json`) is recorded from the same pipeline the live server uses. A test fails if the committed file stops matching what the pipeline produces.
@@ -33,7 +33,7 @@ Each of these was run against this repo.
 2. **Break the radio.** Run `uv run python -m pitwall run --loss 40`. Zero frames lost, about 6,060 resends. Why is p95 latency near a second and what in `link/sender.py` would you change first (hint: `_resend_gap`)?
 3. **Find the lost-frame rule.** In `link/receiver.py`, find where a frame becomes "lost". Why is it tied to `floor` and not to a timer?
 4. **Add a signal.** Add one signal to `dbc/pitwall.dbc`, produce it in `car/sim.py`, and run `uv run pytest`. Which test tells you what else must change?
-5. **Read the parser.** `web/src/core/messages.ts` treats every WebSocket message as untrusted. Open `messages.test.ts` and add one hostile message the parser does not yet reject.
+5. **Read the parser.** `web/src/core/messages.ts` treats every WebSocket message as untrusted. Time values above 1e9 ms are refused because a value like 1e300 once froze the tick loop in the chart. Find the test for it in `messages.test.ts`, then write one more hostile message and check it is dropped.
 
 ## Questions to be ready for
 

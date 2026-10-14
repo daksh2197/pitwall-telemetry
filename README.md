@@ -15,7 +15,7 @@ Not affiliated with F1, any series, any team or any vendor. Not ATLAS, MoTeC i2 
 
 ## Why I built it
 
-I have not worked in motorsport. I have spent four years keeping other people's live systems up, and I log my own car over OBD-II. The part of race engineering I can teach myself at a desk is the plumbing: getting numbers from the car to the people deciding, over a link that will fail at the worst moment. So I built the plumbing, small, and measured it.
+I have not worked in motorsport yet. I log my own car over OBD-II. The part of race engineering I can teach myself at a desk is the plumbing: getting numbers from the car to the people deciding, over a link that will fail at the worst moment. So I built the plumbing, small, and measured it.
 
 ## What it does
 
@@ -37,7 +37,7 @@ If the acks stop for half a second, the car decides the link is down. It stops s
 
 The pit wall only gives up on a frame when the car says it threw it away. It never guesses. That is why "delivered, or counted as lost" holds for every frame in every test.
 
-Same 40-second lap, same link (40 ms delay, up to 8 ms jitter each way), made worse row by row. Latency is the pit wall's clock minus the car's clock for each frame, on the simulation's clock:
+Same 40 seconds of driving, same link (40 ms delay, up to 8 ms jitter each way), made worse row by row. Latency is the pit wall's clock minus the car's clock for each frame, on the simulation's clock:
 
 | Row | p50 (ms) | p95 (ms) | Longest silence (s) | Back to live (s) | Frames lost | Resends |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -103,9 +103,9 @@ To record the replay again after changing the pipeline: `uv run python -m pitwal
 | `cantools` | Reads the DBC, packs and unpacks frames | It is the tool people use for this, and it is MIT licensed |
 | `websockets` | Serves batches to the dashboard | Small, and asyncio-native |
 | `pytest`, `hypothesis` | Tests | Hypothesis invents link conditions from a fixed seed for the property test |
-| `ruff`, `mypy` | Lint and types | Strict types caught real mistakes in the sender |
+| `ruff`, `mypy` | Lint and types | Strict types on both sides |
 | TypeScript, Vite, Vitest | The dashboard | The same stack as [Mol-Bhav Meter](https://github.com/daksh2197/mol-bhav-meter). No framework, about 7 kB of JavaScript once compressed |
-| Canvas | The trace | A thousand points, redrawn on every batch, with no library |
+| Canvas | The trace | A few hundred to a few thousand points, redrawn on every batch, with no library |
 | GitHub Actions, Pages | Test, then deploy | Every push runs both halves. If one fails, nothing ships |
 
 The map:
@@ -141,7 +141,7 @@ Want the guided tour? [docs/CTO-NOTES.md](docs/CTO-NOTES.md) explains every idea
 
 ## What got caught along the way
 
-- **My first definition of "backfilled" was wrong.** I marked a frame as backfilled if it needed a resend. Then I looked at the recorded outage: only 269 of the roughly 1,100 frames from those five seconds were flagged. The car stops sending once it decides the link is down, so most of them were sent for the first time after it came back. A frame is now backfilled if it arrives more than 250 ms after the car made it. That is the same number the dashboard and the metrics use, and a test checks they agree.
+- **My first definition of "backfilled" was wrong.** I marked a frame as backfilled if it needed a resend. Then I looked at the recorded outage: only about a tenth of the roughly 1,100 frames from those five seconds were flagged. The car stops sending once it decides the link is down, so most of them were sent for the first time after it came back. A frame is now backfilled if it arrives more than 250 ms after the car made it. That is the same number the dashboard and the metrics use, and a test checks they agree.
 - **A paused page stopped updating.** The browser walkthrough scrubbed to the 30-second mark while paused and the numbers did not move. The page refreshes its numbers ten times a second, and when a frame skipped the refresh, nothing ever asked again. Unit tests did not see it, because it needs a real page and a real clock. It is fixed, and the walkthrough checks it.
 - **A stale recording.** When I changed what "backfilled" means, the committed replay file went out of date. The test that re-runs the pipeline and compares it to the file failed, which is what that test is for.
 - **The replay cannot drift from the pipeline.** The dashboard has no copy of the link logic. It plays back messages the Python code wrote, and one test checks the page's p50 and p95 against the numbers Python recorded.
@@ -154,6 +154,8 @@ I build with Claude as my pair programmer. I bring the problem and decide what t
 
 - [ ] CAN FD frames, with 64-byte payloads
 - [ ] A clock-sync step, so latency can be measured between two real machines
+- [ ] Error checking on the link packets (a CRC) and sequence-number wraparound
+- [ ] A test against a real radio
 - [ ] A distance axis for the trace, to compare laps
 - [ ] A second recording that shows the buffer overflowing
 - [ ] Log my own car over OBD-II and count how many readings a second the adapter really gives
@@ -163,5 +165,7 @@ Ideas and pull requests are welcome.
 ## License
 
 [MIT](LICENSE). Use it, fork it, learn from it.
+
+Third-party pieces keep their own licences: cantools (MIT), websockets (BSD-3-Clause), and the Bricolage Grotesque, Geist and Geist Mono fonts (SIL Open Font License 1.1, text in [web/public/OFL.txt](web/public/OFL.txt)).
 
 Built in Calgary by [Daksh Dua](https://dakshdua.ca).

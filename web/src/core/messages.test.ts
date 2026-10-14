@@ -28,6 +28,14 @@ describe('parsing messages from a server that may be wrong', () => {
     expect(p.message?.type).toBe('batch');
   });
 
+  it('refuses times too large to count in whole steps', () => {
+    for (const bad of [1e300, 2e9]) {
+      expect(parseMessage({ type: 'batch', rx_ms: bad, samples: [], link }).message).toBeNull();
+      const s = { ...sample, ts: bad, rx: bad };
+      expect(parseMessage({ type: 'batch', rx_ms: 50, samples: [s], link }).dropped).toBe(1);
+    }
+  });
+
   it('accepts a good hello and keeps the outage list', () => {
     const p = parseMessage({ type: 'hello', v: 1, meta });
     expect(p.message?.type === 'hello' && p.message.meta.outages_s).toEqual([[2, 4]]);

@@ -1,9 +1,9 @@
 /*
- * The three typefaces from dakshdua.ca, shipped inside the app instead of loaded
- * from Google. Two reasons: the meter has to work with no signal, and nobody's
- * phone should be calling a third party just to draw letters.
+ * The three typefaces (Bricolage Grotesque, Geist, Geist Mono; SIL OFL 1.1), shipped inside the app instead of loaded
+ * from Google. Two reasons: the page has to work with no signal, and nobody's
+ * browser should be calling a third party just to draw letters.
  *
- * Only the Latin and Latin Extended files are included. ₹ lives in the "latin-ext" one.
+ * Only the Latin and Latin Extended files are included. The "latin-ext" file covers accented letters.
  */
 
 @font-face {

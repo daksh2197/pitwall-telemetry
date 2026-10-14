@@ -25,6 +25,14 @@ def test_run_prints_the_numbers(capsys: pytest.CaptureFixture[str]) -> None:
     assert "latency p95" in out and "back to live" in out and "lost             0" in out
 
 
+def test_settings_that_cannot_run_give_a_message_not_a_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    for args in (["--loss", "100"], ["--duration", "0"], ["--buffer", "0"], ["--delay", "-1"]):
+        assert main(["run", *args]) == 2, args
+        assert capsys.readouterr().err.startswith("pitwall: ")
+
+
 def test_loss_must_be_a_percent() -> None:
     with pytest.raises(SystemExit):
         main(["run", "--duration", "1", "--loss", "150"])

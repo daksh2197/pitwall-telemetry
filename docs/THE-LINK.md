@@ -73,4 +73,4 @@ With a 500-frame buffer the same outage loses 649 frames, and back-to-live drops
 - **Head-of-line blocking.** In-order delivery means one missing frame holds up everything behind it until it is resent or given up. The 5% and 10% loss rows show the cost in p95 latency.
 - **Drop oldest.** A long enough outage loses history. It is counted and shown, never hidden.
 - **Clocks.** Latency is the pit wall's receive time minus the car's timestamp. Here both read one simulated clock. A real car and a real pit wall need clock sync (for example GPS time or PTP) for that number to mean anything.
-- **No wraparound, no checksum.** Sequence numbers are 32 bits and wrap after about 226 days of driving at 220 frames a second. Real radios carry their own error checking, so there is no CRC here. Neither is handled.
+- **No wraparound, no checksum.** Sequence numbers are 32 bits and wrap after about 226 days of driving at 220 frames a second. There is no CRC here, because the simulated radio never corrupts a packet, only loses it. Neither is handled.

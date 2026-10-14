@@ -23,4 +23,4 @@ It is a simulation. It uses no real car data, no real team's data and no real ra
 
 ## What it would take to go further
 
-Real clock sync, error checking, support for larger CAN FD frames, and a test against a real radio. Those are listed in the README under What's next.
+Real clock sync, error checking, support for larger CAN FD frames, and a test against a real radio. The first two are listed in the README under What's next.
