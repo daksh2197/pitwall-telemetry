@@ -403,8 +403,13 @@ input[type='range'] {
   background: var(--signal);
 }
 
-.now[data-stale='true'] .readouts {
-  opacity: 0.62;
+/* Stale values go grey instead of faint, so the words stay above 4.5:1 contrast. */
+.now[data-stale='true'] .ro dd {
+  color: var(--muted);
+}
+
+.now[data-stale='true'] .rpm-bar > span {
+  background: var(--muted);
 }
 
 /* ---------- link and latency ---------- */
