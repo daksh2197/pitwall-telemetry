@@ -1,0 +1,108 @@
+# Every push to main and every pull request runs this file on a fresh computer in GitHub's cloud.
+#
+#   1. python  - lint, type-check and test the pipeline (car, link, pit wall)
+#   2. web     - test and build the dashboard
+#   3. deploy  - only on main, and only if both passed: put the dashboard on the internet
+#
+# If a test fails, nothing ships. That is the whole point.
+#
+# While the repo is private, only the tests and the build run. The deploy steps are skipped.
+# Once the repo is public, set Settings > Pages > Source to "GitHub Actions". After that every
+# push to main deploys.
+
+name: Test and ship
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# If two pushes land close together, only the newest one needs to finish.
+concurrency:
+  group: ship-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Pipeline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install exactly what uv.lock says
+        run: uv sync --locked
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Type-check
+        run: uv run mypy
+
+      - name: Run the tests
+        run: uv run pytest
+
+  web:
+    name: Dashboard tests and build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exactly what package-lock.json says
+        run: npm ci
+
+      - name: Run the tests
+        run: npm test
+
+      - name: Ask GitHub where this site will live
+        id: pages
+        if: github.ref == 'refs/heads/main' && !github.event.repository.private
+        uses: actions/configure-pages@v6
+
+      - name: Build
+        run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+
+      - name: Hand the build to the deploy job
+        if: github.ref == 'refs/heads/main' && !github.event.repository.private
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: web/dist
+
+  deploy:
+    name: Put it on the internet
+    needs: [python, web]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !github.event.repository.private
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

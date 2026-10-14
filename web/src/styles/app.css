@@ -528,6 +528,12 @@ input[type='range'] {
   }
 }
 
+@media (max-width: 360px) {
+  .brand span:last-child {
+    display: none; /* the DD tile carries the link; its aria-label still names it */
+  }
+}
+
 @media (max-width: 420px) {
   .hist li {
     grid-template-columns: minmax(78px, 7em) 1fr 5ch;

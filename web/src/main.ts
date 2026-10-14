@@ -193,6 +193,7 @@ if (socketParam !== null) {
 let lastFrame = performance.now();
 let lastPanels = 0;
 let lastDrawnVersion = -1;
+let panelsStale = true;
 
 function frame(now: number): void {
   const dt = now - lastFrame;
@@ -206,30 +207,34 @@ function frame(now: number): void {
     lastDrawnVersion = store.version;
     dirty = false;
     drawTrace(canvas, { store, state: status.state, palette });
-    if (now - lastPanels > 90 || status.state === 'finished') {
-      lastPanels = now;
-      updatePanels(store, status, parseDropped);
-      if (status.state !== lastState) {
-        lastState = status.state;
-        announce.textContent = `Link ${status.label.toLowerCase()}.`;
-      }
-      if (player) {
-        if (!scrubbing) scrub.value = String(Math.round(player.position));
-        const text = `${fmtClock(player.position)} / ${fmtClock(player.duration)}`;
-        if (clock.textContent !== text) clock.textContent = text;
-      }
-      const endNote = $('end-note');
-      if (store.ended && store.summary && endNote.hidden) {
-        const s = store.summary;
-        const m = store.latencyStats();
-        endNote.textContent =
-          `End of the run. The car made ${s.generated.toLocaleString('en-CA')} frames. ` +
-          `${s.delivered.toLocaleString('en-CA')} reached the pit wall and ${s.lost.toLocaleString('en-CA')} were lost. ` +
-          `Median latency ${fmtDuration(m.p50)}, 95th percentile ${fmtDuration(m.p95)}.`;
-        endNote.hidden = false;
-      } else if (!store.ended && !endNote.hidden) {
-        endNote.hidden = true;
-      }
+    panelsStale = true;
+  }
+  // The numbers update at most ten times a second. If a frame skips them, they stay marked
+  // stale and the next frame does them, so a paused page still ends up showing the latest.
+  if (panelsStale && now - lastPanels > 90) {
+    lastPanels = now;
+    panelsStale = false;
+    updatePanels(store, status, parseDropped);
+    if (status.state !== lastState) {
+      lastState = status.state;
+      announce.textContent = `Link ${status.label.toLowerCase()}.`;
+    }
+    if (player) {
+      if (!scrubbing) scrub.value = String(Math.round(player.position));
+      const text = `${fmtClock(player.position)} / ${fmtClock(player.duration)}`;
+      if (clock.textContent !== text) clock.textContent = text;
+    }
+    const endNote = $('end-note');
+    if (store.ended && store.summary && endNote.hidden) {
+      const s = store.summary;
+      const m = store.latencyStats();
+      endNote.textContent =
+        `End of the run. The car made ${s.generated.toLocaleString('en-CA')} frames. ` +
+        `${s.delivered.toLocaleString('en-CA')} reached the pit wall and ${s.lost.toLocaleString('en-CA')} were lost. ` +
+        `Median latency ${fmtDuration(m.p50)}, 95th percentile ${fmtDuration(m.p95)}.`;
+      endNote.hidden = false;
+    } else if (!store.ended && !endNote.hidden) {
+      endNote.hidden = true;
     }
   }
   requestAnimationFrame(frame);
