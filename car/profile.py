@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 TOP_SPEED_MS = 290 / 3.6  # the cap on straights, in metres per second
 ACCEL_MS2 = 6.0  # most the car can accelerate, metres per second squared
@@ -71,14 +71,23 @@ def rpm_for(speed_kph: float, gear: int) -> float:
 
 
 class Lap:
-    """One lap, worked out in advance from a seed. Looping past the end starts the next lap."""
+    """One lap, worked out in advance from a seed. Looping past the end starts the next lap.
 
-    def __init__(self, seed: int) -> None:
+    `pace` scales every apex speed, so 0.97 is the same track driven a little slower through
+    the corners. The track itself (where the corners are, how long they are) only depends on
+    the seed, which is what lets two laps be compared metre by metre.
+    """
+
+    def __init__(self, seed: int, pace: float = 1.0) -> None:
+        if not 0.5 <= pace <= 1.2:
+            raise ValueError(f"pace must be between 0.5 and 1.2, got {pace}")
         rng = random.Random(seed)
         self.seed = seed
-        self.corners = self._pick_corners(rng)
+        self.pace = pace
+        self.corners = [replace(c, apex_kph=c.apex_kph * pace) for c in self._pick_corners(rng)]
         self.length_m = int(self.corners[-1].end_m + rng.uniform(150, 250))
         self._cap = self._speed_caps()
+        self._metres: list[float] = []
         self._states = self._drive(random.Random(seed + 1))
         self.lap_ms = len(self._states)
 
@@ -134,6 +143,7 @@ class Lap:
             v = self._speed_at(metres)
             track.append((metres, v))
             metres += v * dt
+        self._metres = [m for m, _ in track]
         # Pass 2: turn position and speed into sensor readings.
         states: list[State] = []
         gear = 1
@@ -168,3 +178,7 @@ class Lap:
     def state_at(self, ms: int) -> State:
         """The sensor readings `ms` milliseconds after the start. Past the end, the next lap."""
         return self._states[ms % self.lap_ms]
+
+    def distance_at(self, ms: int) -> float:
+        """Metres from the line `ms` milliseconds into this lap (0 to lap_ms - 1)."""
+        return self._metres[ms]
