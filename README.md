@@ -65,6 +65,25 @@ The shape is the real one. The details are smaller.
 
 I have no source for how any team moves data off a car, so I do not describe it. Radio hardware, licensed frequencies and proprietary loggers are outside this repo.
 
+## Lap delta (new in v1.1)
+
+`uv run python -m pitwall delta` drives two laps of the same track, one taking every corner 5% slower, and compares them the way a pit wall does: by distance, not by time. At 1,259 m both laps are at the same spot, so the gap in how long each took to get there is the delta.
+
+```
+datum   pace 1  62.990 s
+lap     pace 0.95  65.266 s  (+2.276 s)
+
+biggest speed gaps against the datum
+where       metres  lap km/h  datum km/h     gap
+T3 entry      1259     138.3       145.9    -7.6
+T3 exit       1307     138.4       145.9    -7.5
+T2 entry       788     129.1       136.2    -7.1
+```
+
+The fastest lap becomes the datum. `--veto` stops a lap from being the datum and `--force` makes a slower one the datum, for when the track goes wet and the dry lap is no longer a fair target.
+
+This replicates the method in US 5,173,856 (Pi Research, "Vehicle data recording system"), which expired in 2009. I read its status on the [Google Patents page](https://patents.google.com/patent/US5173856A/en) on 2026-10-17. The code is mine; the idea is theirs and free to build.
+
 ## Run it yourself
 
 You need [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org) 22.12 or newer. Python 3.12 or newer comes with uv.
@@ -77,6 +96,7 @@ uv sync                                         # installs cantools, websockets 
 uv run pytest                                   # the pipeline tests, about half a minute
 uv run python -m pitwall run --outage 12:17     # one run, numbers printed
 uv run python -m pitwall bench                  # every row of the table above
+uv run python -m pitwall delta                  # lap delta against the fastest lap
 
 cd web
 npm ci

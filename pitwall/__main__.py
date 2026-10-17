@@ -1,4 +1,4 @@
-"""Command line: `uv run python -m pitwall <run|bench|record|serve>`."""
+"""Command line: `uv run python -m pitwall <run|bench|record|serve|delta>`."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ import contextlib
 import sys
 from pathlib import Path
 
-from pitwall import bench
+from car.profile import Lap
+from pitwall import bench, lapdelta
 from pitwall.pipeline import Pipeline, RunConfig
 from pitwall.record import REPLAY_CONFIG, REPLAY_PATH, write_replay
 from pitwall.server import DEFAULT_PORT, serve
@@ -102,6 +103,23 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_delta(args: argparse.Namespace) -> int:
+    try:
+        laps = [
+            lapdelta.trace_from_lap(Lap(args.seed, pace), f"pace {pace:g}") for pace in args.pace
+        ]
+        datum = lapdelta.pick_datum(laps, frozenset(args.veto), args.force)
+    except ValueError as err:
+        print(f"pitwall: {err}", file=sys.stderr)
+        return 2
+    corners = Lap(args.seed).corners
+    for lap in laps:
+        if lap is not datum:
+            print(lapdelta.report(lap, datum, corners))
+            print()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pitwall", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -132,6 +150,19 @@ def main(argv: list[str] | None = None) -> int:
         help="use the recorded replay's settings (2%% loss, outage 12:17)",
     )
     srv.set_defaults(func=cmd_serve)
+
+    dl = sub.add_parser("delta", help="compare laps on one track against the fastest (datum) lap")
+    dl.add_argument("--seed", type=int, default=bench.SEED, help="track seed (default %(default)s)")
+    dl.add_argument(
+        "--pace",
+        type=float,
+        nargs="+",
+        default=[1.0, 0.95],
+        help="one lap per value; 0.95 takes every corner 5%% slower (default 1.0 0.95)",
+    )
+    dl.add_argument("--veto", action="append", default=[], help="lap name that can't be datum")
+    dl.add_argument("--force", help="lap name to use as the datum even if it is slower")
+    dl.set_defaults(func=cmd_delta)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
