@@ -1,4 +1,4 @@
-"""Command line: `uv run python -m pitwall <run|bench|record|serve|delta|sideslip>`."""
+"""Command line: `uv run python -m pitwall <run|bench|record|serve|delta|sideslip|tires>`."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from car.profile import Lap
-from pitwall import bench, lapdelta, sideslip
+from pitwall import bench, lapdelta, sideslip, tirewarn
 from pitwall.pipeline import Pipeline, RunConfig
 from pitwall.record import REPLAY_CONFIG, REPLAY_PATH, write_replay
 from pitwall.server import DEFAULT_PORT, serve
@@ -131,6 +131,11 @@ def cmd_sideslip(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_tires(args: argparse.Namespace) -> int:
+    print(tirewarn.report())
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pitwall", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -181,6 +186,9 @@ def main(argv: list[str] | None = None) -> int:
     ss.add_argument("--beta", type=float, default=-4.0, help="true sideslip at the CG, degrees")
     ss.add_argument("--latency", type=float, default=50.0, help="GPS latency in ms")
     ss.set_defaults(func=cmd_sideslip)
+
+    tw = sub.add_parser("tires", help="spot a soft tire from the four wheel speeds")
+    tw.set_defaults(func=cmd_tires)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

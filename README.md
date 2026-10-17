@@ -102,6 +102,25 @@ Each correction is worth about a degree, on a corner where the whole signal is f
 
 This replicates the method in US 6,681,180 (Stanford, "Determination and control of vehicle sideslip using GPS"), which expired on 2022-01-29. I read its status on the [Google Patents page](https://patents.google.com/patent/US6681180B2/en) on 2026-10-17. The test corner is made up, like the lap.
 
+## Soft-tire warning (new in v1.3)
+
+A tire that loses pressure gets a little smaller, so its wheel spins a little faster. `uv run python -m pitwall tires` watches the four wheel speeds for that. It adds the diagonals (front-left plus rear-right against front-right plus rear-left), which cancels the speed difference cornering puts between the inside and outside wheels. It names the wheel that runs more than 0.1% faster than the average of all four, on the high diagonal. It pauses during hard cornering, braking or acceleration, and only warns once a wheel has stayed fast for two seconds.
+
+```
+45 s at 108 km/h, two 120 m corners, 0.02% speed noise
+
+run                    warnings
+healthy, corners       none
+FL soft in a corner    FL at 16.0 s
+FL soft at 20 s        FL at 22.0 s
+RR soft at 20 s        RR at 22.0 s
+FR soft, 0.2% loss     FR at 22.1 s
+```
+
+A tire that goes soft mid-corner gets named once the corner ends, and noise does not make it repeat the warning. The tests check each wheel, the cornering cancel, the pause, and that a loss too small to matter stays quiet.
+
+This replicates the method in US 4,876,528 (SP Tyres UK, "Method of detecting a deflated tyre on a vehicle"), which expired on 2008-05-13. I read its status on the [Google Patents page](https://patents.google.com/patent/US4876528A/en) on 2026-10-17. The wheel speeds are made up, like the lap.
+
 ## Run it yourself
 
 You need [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org) 22.12 or newer. Python 3.12 or newer comes with uv.
@@ -195,7 +214,7 @@ I build with Claude as my pair programmer. I bring the problem and decide what t
 - [ ] A clock-sync step, so latency can be measured between two real machines
 - [ ] Error checking on the link packets (a CRC) and sequence-number wraparound
 - [ ] A test against a real radio
-- [ ] A distance axis for the trace, to compare laps
+- [ ] Read per-wheel speeds off a real CAN bus (ABS module) for the tire warning
 - [ ] A second recording that shows the buffer overflowing
 - [ ] Log my own car over OBD-II and count how many readings a second the adapter really gives
 
