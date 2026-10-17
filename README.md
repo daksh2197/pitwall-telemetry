@@ -84,6 +84,24 @@ The fastest lap becomes the datum. `--veto` stops a lap from being the datum and
 
 This replicates the method in US 5,173,856 (Pi Research, "Vehicle data recording system"), which expired in 2009. I read its status on the [Google Patents page](https://patents.google.com/patent/US5173856A/en) on 2026-10-17. The code is mine; the idea is theirs and free to build.
 
+## Sideslip from GPS (new in v1.2)
+
+Sideslip is the angle between where the car points and where it is actually going. Nothing on the car measures it. `uv run python -m pitwall sideslip` works it out the way Stanford did: GPS says where the antenna is going, an integrated yaw gyro says where the car points, and the angle between them is sideslip. Then two corrections: take the heading at the moment the GPS measured, not when its answer arrived, and move the answer from the antenna to the centre of gravity.
+
+```
+corner: 108 km/h, 80 m radius, true sideslip -4.0 deg at the CG
+GPS 10 Hz, 50 ms late; gyro 100 Hz, +0.50 deg/s bias
+
+method            turn-in RMS  corner RMS  (degrees of error)
+full method              0.05        0.06
+no latency fix           0.74        1.09
+antenna, not CG          0.50        0.84
+```
+
+Each correction is worth about a degree, on a corner where the whole signal is four. Skip the latency fix and the error is yaw rate times latency. Skip the move to the CG and it is the angle the antenna's lever arm sweeps. The tests check both against those formulas.
+
+This replicates the method in US 6,681,180 (Stanford, "Determination and control of vehicle sideslip using GPS"), which expired on 2022-01-29. I read its status on the [Google Patents page](https://patents.google.com/patent/US6681180B2/en) on 2026-10-17. The test corner is made up, like the lap.
+
 ## Run it yourself
 
 You need [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org) 22.12 or newer. Python 3.12 or newer comes with uv.
@@ -97,6 +115,7 @@ uv run pytest                                   # the pipeline tests, about half
 uv run python -m pitwall run --outage 12:17     # one run, numbers printed
 uv run python -m pitwall bench                  # every row of the table above
 uv run python -m pitwall delta                  # lap delta against the fastest lap
+uv run python -m pitwall sideslip               # sideslip from GPS and a gyro
 
 cd web
 npm ci
