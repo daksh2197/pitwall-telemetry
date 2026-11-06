@@ -1,6 +1,6 @@
 [project]
 name = "pitwall-telemetry"
-version = "1.1.0"
+version = "1.3.0"
 description = "A race telemetry pipeline in miniature: CAN frames over a bad link to a live pit-wall dashboard."
 readme = "README.md"
 license = "MIT"
