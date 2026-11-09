@@ -18,7 +18,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run && node --test \"sim-tests/*.test.js\"",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

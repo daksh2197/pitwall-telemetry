@@ -1,0 +1,20 @@
+{
+  "format": "pitwall-sim-profile/1",
+  "name": "Standard gamepad",
+  "device": null,
+  "steer": {
+    "axis": 0,
+    "invert": false,
+    "deadzone": 0.02,
+    "sens": 1
+  },
+  "throttle": {
+    "type": "button",
+    "index": 7
+  },
+  "brake": {
+    "type": "button",
+    "index": 6
+  },
+  "combined": null
+}

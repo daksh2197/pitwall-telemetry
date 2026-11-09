@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<meta name="color-scheme" content="dark">
+<title>Pitwall Sim</title>
+<meta name="description" content="Drive a lap in the browser with seven expired race patents as switches. Keyboard, touch and any controller your browser can see.">
+<link rel="stylesheet" href="styles.css">
+<script type="module" src="src/main.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <nav class="top-links" aria-label="Pitwall Sim"><a href="../">&larr; Back to the dashboard</a><a href="https://github.com/daksh2197/pitwall-telemetry">Source on GitHub</a></nav>
+      <div class="eyebrow">Pitwall Telemetry · the sim</div>
+      <h1>Pitwall Sim</h1>
+      <p class="sub">I built this to drive a lap and see what seven old patents do to it. Each switch changes the car or adds a gauge. The lap table shows what it did to your time. Keyboard and touch work. Any controller your browser can see should work too, but I haven't tried it on real hardware.</p>
+    </div>
+    <div class="chips"><span class="chip" id="in-chip">Input: <b>Keyboard</b></span><span class="chip" id="fps-chip">Sim <b>240 Hz</b></span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="cockpit">
+    <div class="view" id="view" tabindex="0" aria-label="Track view. Click, then drive with W A S D or the arrow keys.">
+      <canvas id="track"></canvas>
+      <div class="surface" id="surface"></div>
+      <canvas id="mini" width="300" height="300"></canvas>
+      <div class="vbar" id="vbar">
+        <div class="seg" role="group" aria-label="View"><button type="button" id="v2d" aria-pressed="true">2D</button><button type="button" id="v3d" aria-pressed="false">3D</button></div>
+        <div class="seg" id="camseg" role="group" aria-label="Camera" hidden><button type="button" id="cchase" aria-pressed="true">Chase</button><button type="button" id="ccock" aria-pressed="false">Cockpit</button></div>
+        <button type="button" id="vr" hidden title="WebXR mode, untested on a headset">Enter VR (untested)</button>
+      </div>
+      <div class="hint"><span class="kb"><b>W/↑</b> throttle</span><span class="kb"><b>S/↓</b> brake</span><span class="kb"><b>A D / ← →</b> steer</span><span class="kb"><b>R</b> reset</span><span class="kb" id="camhint" hidden><b>C</b> camera</span><span>Controller: plug in and press a pedal</span></div>
+      <div class="start" id="start"><div><strong>Click to drive</strong><p>Keyboard, touch or a controller. Cross the start line to begin timing. Your best lap sets the reference for the live delta.</p><button class="btn primary" type="button" id="go">Start</button></div></div>
+    </div>
+    <aside class="dash" aria-label="Dash">
+      <div class="cluster">
+        <div class="speed"><span id="spd">0</span><small>km/h</small></div>
+        <div class="gear"><small>Gear</small><span id="gear">1</span></div>
+        <div class="rpm">
+          <div class="lights" id="lights"><i class="g"></i><i class="g"></i><i class="y"></i><i class="y"></i><i class="r"></i></div>
+          <div class="bar"><span id="rpmbar"></span></div>
+          <div class="rpmtxt"><span id="rpm">0 rpm</span><span id="eng">Piston V6 · 7,200 limit</span></div>
+        </div>
+      </div>
+      <div class="laps">
+        <div class="cell"><div class="k">Lap</div><div class="v" id="lap">0:00.00</div></div>
+        <div class="cell delta"><div class="k">Delta to best</div><div class="v" id="delta">–</div><div class="p">1988 · lap delta</div></div>
+        <div class="cell"><div class="k">Last</div><div class="v" id="last">–</div></div>
+        <div class="cell"><div class="k">Best</div><div class="v" id="best">–</div></div>
+      </div>
+      <div class="row2">
+        <div class="inst"><div class="k"><span>Slip angle</span><span>2001</span></div>
+          <svg viewBox="0 0 150 86" aria-hidden="true"><path d="M15 78 A60 60 0 0 1 135 78" fill="none" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/><line id="needle" x1="75" y1="78" x2="75" y2="26" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/><circle cx="75" cy="78" r="5" fill="var(--text)"/><text x="12" y="86" font-size="9" fill="var(--muted)" font-family="var(--f-mono)">−15°</text><text x="122" y="86" font-size="9" fill="var(--muted)" font-family="var(--f-mono)">15°</text></svg>
+          <div class="v mono" style="font-family:var(--f-mono);font-size:13px"><span id="slip">0.0°</span> · drift <span id="drift">0</span></div>
+        </div>
+        <div class="inst"><div class="k"><span>Grip circle</span><span id="gval">0.0 g</span></div><canvas id="gg" width="300" height="300" aria-hidden="true"></canvas></div>
+      </div>
+      <div class="pedals">
+        <span>Throttle</span><div class="bar"><span class="t" id="thr"></span></div>
+        <span>Brake</span><div class="bar"><span class="b" id="brk"></span></div>
+        <span>Steer</span><div class="steerbar"><span id="str"></span></div>
+      </div>
+      <div class="warnlight" id="tirelight"><i></i><span id="tiretxt">Tire monitor: all four OK</span></div>
+      <div class="btns"><button class="btn" type="button" id="reset">Reset car (R)</button><button class="btn" type="button" id="auto" aria-pressed="false">Test driver</button><button class="btn" type="button" id="clearbest">Clear best lap</button></div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </aside>
+  </section>
+
+  <div class="touch" id="touch" aria-label="Touch controls">
+    <button type="button" class="brk" id="t-brk">Brake</button>
+    <input type="range" id="t-steer" min="-100" max="100" value="0" aria-label="Steering">
+    <button type="button" class="gas" id="t-gas">Gas</button>
+  </div>
+
+  <section class="block" id="patents">
+    <div class="sec-head">
+      <h2>The switch panel: 1958 to 2001</h2>
+      <p>Seven patents, by the year each was first filed. All seven are past their full 20-year term, so none of them can come back. The numbers in this sim are illustrative, so use it to compare switches against each other, not as a real car model.</p>
+    </div>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <section class="block">
+    <div class="sec-head"><h2>Lap table</h2><p>Every completed lap, with the switches that were on. Laps with more than 1.5 s off the track are marked and can't become your best. No controller? Press Test driver to watch a lap, then try to beat its delta.</p></div>
+    <div class="table-wrap"><table><thead id="lapthead"><tr><th>Lap</th><th>Time</th><th>Delta to best</th><th>Switches</th><th>Top speed</th></tr></thead><tbody id="laptable"><tr><td colspan="5" class="empty">No laps yet. Cross the start line twice.</td></tr></tbody></table></div>
+    <div class="lap-tools"><button class="btn" type="button" id="csvbtn">Export laps (CSV)</button></div>
+  </section>
+
+  <section class="block">
+    <div class="sec-head"><h2>Wheel and pedals</h2><p>The sim reads any controller your browser can see. Map your pedals once and it remembers them on this device. I haven't tested it on a real wheel or pad, so treat it as untested on real hardware.</p></div>
+    <div class="wheel">
+      <div class="panel">
+        <h3>Controller</h3>
+        <p id="gp-status" style="color:var(--muted);font-size:14px">Looking for a wheel or gamepad…</p>
+        <div class="axes" id="axes"></div>
+        <div class="prof" id="profsum"></div>
+        <div class="btns"><button class="btn" type="button" id="map">Map pedals</button><button class="btn" type="button" id="invert">Invert steering</button></div>
+        <div class="btns"><button class="btn" type="button" id="profexport">Export profile</button><button class="btn" type="button" id="profimport">Import profile</button><button class="btn" type="button" id="profreset">Reset to standard</button><input type="file" id="proffile" accept=".json,application/json" hidden></div>
+        <label style="font-size:13px;color:var(--muted);display:grid;gap:4px">Steering sensitivity <input type="range" id="sens" min="50" max="150" value="100" style="accent-color:var(--accent)"></label>
+        <div class="step" id="mapstep" hidden></div>
+      </div>
+      <div class="panel">
+        <h3>What works</h3>
+        <div class="roadmap">
+          <div><b class="done">Works</b><span>Keyboard and touch. Any controller the browser exposes through the Gamepad API: with a standard pad, R2 is gas, L2 is brake and the left stick steers.</span></div>
+          <div><b>Untested</b><span>Real wheels and pads, and VR. The pedal-mapping wizard and the WebXR mode are written to the specs, but untested on a headset or a real wheel. If a controller doesn't show up, press a button on it first, or try Chrome or Edge.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">Plain HTML and ES modules, with no account and no build step for the sim. The only library is three.js (MIT), kept in this folder. Pitwall Sim is not affiliated with any team, manufacturer or patent holder. Patent links go to Google Patents, whose status lines are estimates. Sim values are illustrative.</div></footer>
+</body>
+</html>
