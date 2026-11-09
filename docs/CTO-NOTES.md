@@ -13,10 +13,15 @@ Most telemetry demos show a clean stream. This one starts from the radio that fa
 | `link/` | Packets, lossy channel, sender, receiver, session loop |
 | `pitwall/` | Decoder, metrics, pipeline, WebSocket server, replay recorder, bench, CLI |
 | `web/` | The dashboard: TypeScript, Vite, no framework. `src/core` is pure logic with tests |
+| `web/public/sim/` | The drivable sim: plain HTML and ES modules, three.js vendored, no build step. Its node tests are in `web/sim-tests/` |
 | `tests/` | 96 Python tests. The web tests are 84 Vitest tests in `web/src` |
 | `scripts/` | Browser walkthrough (57 checks), subpath server, media generation |
 
 The replay the site plays (`web/public/replay.json`) is recorded from the same pipeline the live server uses. A test fails if the committed file stops matching what the pipeline produces.
+
+## The sim
+
+`web/public/sim/` is a separate page, a lap you drive in the browser with seven expired patents as switches. It is plain JavaScript modules, so Vite copies it into the build untouched and `tsc` and Vitest never see it. Its physics, lap timer and controller profiles are DOM-free and tested with `node --test` (`npm test` runs both suites). The numbers are illustrative. Controllers and the WebXR mode are untested on real hardware.
 
 ## When it breaks
 

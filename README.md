@@ -121,6 +121,16 @@ A tire that goes soft mid-corner gets named once the corner ends, and noise does
 
 This replicates the method in US 4,876,528 (SP Tyres UK, "Method of detecting a deflated tyre on a vehicle"), which expired on 2008-05-13. I read its status on the [Google Patents page](https://patents.google.com/patent/US4876528A/en) on 2026-10-17. The wheel speeds are made up, like the lap.
 
+## Drive it yourself: the sim (new in v1.4)
+
+The sim is a lap you drive in the browser. Seven expired patents are switches you flip mid-lap: rotary engine US 2,988,065, intermittent wiper US 3,351,836, ground-effect undertray CA 1,149,841, low-tire warning US 4,876,528, lap delta US 5,173,856, GPS sideslip US 6,681,180 and inerter US 7,316,303. The lap table shows what each one did to your time.
+
+Open it at https://daksh2197.github.io/pitwall-telemetry/sim/. Keyboard and touch work. A test driver can run a lap for you. Any controller the browser can see should work too, but I haven't tried it on a wheel, a pad or a headset. The VR mode is untested.
+
+To run it locally: `cd web && npm run dev`, then open `/sim/`. There is nothing to install for the sim itself. The numbers are illustrative, so use it to compare switches against each other, not as a car model.
+
+It is plain HTML and ES modules with three.js vendored, and no build step for the sim, so it should still open in ten years.
+
 ## Run it yourself
 
 You need [uv](https://docs.astral.sh/uv/) and [Node.js](https://nodejs.org) 22.12 or newer. Python 3.12 or newer comes with uv.
@@ -138,7 +148,8 @@ uv run python -m pitwall sideslip               # sideslip from GPS and a gyro
 
 cd web
 npm ci
-npm test                                        # the dashboard tests, about a second
+npm test                                        # the dashboard tests, then the sim tests, a few seconds
+node --test "sim-tests/*.test.js"               # just the sim tests (physics, lap timer, controller profiles)
 npm run dev                                     # the dashboard, replaying the recording, at http://localhost:5173
 ```
 
@@ -224,6 +235,6 @@ Ideas and pull requests are welcome.
 
 [MIT](LICENSE). Use it, fork it, learn from it.
 
-Third-party pieces keep their own licences: cantools (MIT), websockets (BSD-3-Clause), and the Bricolage Grotesque, Geist and Geist Mono fonts (SIL Open Font License 1.1, text in [web/public/OFL.txt](web/public/OFL.txt)).
+Third-party pieces keep their own licences: cantools (MIT), websockets (BSD-3-Clause), three.js (MIT, vendored in `web/public/sim/vendor/three/` for the sim), and the Bricolage Grotesque, Geist and Geist Mono fonts (SIL Open Font License 1.1, text in [web/public/OFL.txt](web/public/OFL.txt)).
 
 Built in Calgary by [Daksh Dua](https://dakshdua.ca).
