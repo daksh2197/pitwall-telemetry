@@ -129,7 +129,7 @@ Open it at https://daksh2197.github.io/pitwall-telemetry/sim/. Keyboard and touc
 
 To run it locally: `cd web && npm run dev`, then open `/sim/`. There is nothing to install for the sim itself. The numbers are illustrative, so use it to compare switches against each other, not as a car model.
 
-It is plain HTML and ES modules with three.js vendored, and no build step for the sim, so it should still open in ten years.
+It is plain HTML and ES modules with three.js vendored, and no build step for the sim, so it should still open in 2040.
 
 ## Run it yourself
 
